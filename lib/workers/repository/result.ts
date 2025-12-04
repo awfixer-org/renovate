@@ -1,5 +1,21 @@
 import type { RenovateConfig } from '../../config/types';
 
+import type {
+  EXTERNAL_HOST_ERROR,
+  MANAGER_LOCKFILE_ERROR,
+  NO_VULNERABILITY_ALERTS,
+  PLATFORM_AUTHENTICATION_ERROR,
+  PLATFORM_BAD_CREDENTIALS,
+  PLATFORM_INTEGRATION_UNAUTHORIZED,
+  PLATFORM_RATE_LIMIT_EXCEEDED,
+  REPOSITORY_CANNOT_FORK,
+  REPOSITORY_CHANGED,
+  REPOSITORY_FORK_MISSING,
+  SYSTEM_INSUFFICIENT_DISK_SPACE,
+  SYSTEM_INSUFFICIENT_MEMORY,
+  TEMPORARY_ERROR,
+  UNKNOWN_ERROR,
+} from '../../constants/error-messages';
 import {
   CONFIG_SECRETS_EXPOSED,
   CONFIG_VALIDATION,
@@ -30,15 +46,61 @@ export type ProcessStatus =
   | 'unknown';
 
 export interface ProcessResult {
-  res: string;
+  res: RepositoryResult;
   status: ProcessStatus;
   enabled: boolean | undefined;
   onboarded: boolean | undefined;
 }
 
+/** a strong type for any repository result status that Renovate may report */
+export type RepositoryResult =
+  // repository was processed successfully
+  | 'done'
+  // Renovate performed branch-based automerge on one branch during its run
+  | 'automerged'
+  // Repository Errors - causes repo to be considered as disabled
+  | typeof REPOSITORY_UNINITIATED
+  | typeof REPOSITORY_EMPTY
+  | typeof REPOSITORY_CLOSED_ONBOARDING
+  | typeof REPOSITORY_DISABLED
+  | typeof REPOSITORY_DISABLED_BY_CONFIG
+  | typeof REPOSITORY_NO_CONFIG
+  | typeof REPOSITORY_ARCHIVED
+  | typeof REPOSITORY_MIRRORED
+  | typeof REPOSITORY_RENAMED
+  | typeof REPOSITORY_BLOCKED
+  | typeof REPOSITORY_ACCESS_FORBIDDEN
+  | typeof REPOSITORY_NOT_FOUND
+  | typeof REPOSITORY_FORK_MODE_FORKED
+  | typeof REPOSITORY_FORKED
+  | typeof REPOSITORY_CANNOT_FORK
+  | typeof REPOSITORY_FORK_MISSING
+  | typeof REPOSITORY_NO_PACKAGE_FILES
+  // temporary errors
+  | typeof NO_VULNERABILITY_ALERTS
+  | typeof REPOSITORY_CHANGED
+  | typeof TEMPORARY_ERROR
+  // Config Error
+  | typeof CONFIG_VALIDATION
+  | typeof MISSING_API_CREDENTIALS
+  | typeof CONFIG_SECRETS_EXPOSED
+  // system errors
+  | typeof SYSTEM_INSUFFICIENT_DISK_SPACE
+  | typeof SYSTEM_INSUFFICIENT_MEMORY
+  // host errors
+  | typeof EXTERNAL_HOST_ERROR
+  // platform errors
+  | typeof PLATFORM_RATE_LIMIT_EXCEEDED
+  | typeof PLATFORM_BAD_CREDENTIALS
+  | typeof PLATFORM_INTEGRATION_UNAUTHORIZED
+  | typeof PLATFORM_AUTHENTICATION_ERROR
+  // other errors
+  | typeof MANAGER_LOCKFILE_ERROR
+  | typeof UNKNOWN_ERROR;
+
 export function processResult(
   config: RenovateConfig,
-  res: string,
+  res: RepositoryResult,
 ): ProcessResult {
   const disabledStatuses = [
     REPOSITORY_ACCESS_FORBIDDEN,
